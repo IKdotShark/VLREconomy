@@ -161,4 +161,4 @@ async def update_money_message(channel):
 
         await money_message.edit(embed=embed, view=view)
 
-bot.run('MTI0NTAzNzAwODg5Njc5MDU5NA.GwX6wc.HIfWmxGD8f3PkW5YWDgnJ3s7Q4F6Gs190wS3jw')
+bot.run('DISCORD_BOT_TOKEN')
