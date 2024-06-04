@@ -3,7 +3,16 @@ import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View, Modal, TextInput
 from datetime import datetime, timedelta
+import json
 
+# Создайте .env файл с вашим токеном
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+
+# Flask сервер для keep-alive (необходим для бесплатных хостингов, например, Repl.it)
 from flask import Flask
 from threading import Thread
 
@@ -20,45 +29,49 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+# Инициализация бота
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
-# Файлы для состояния общака и истории транзакций
-OBSHAK_FILE = "ObshakState.txt"
-LOG_FILE = "FinanceLogs.txt"
-
 # Состояние общака и история транзакций
-obshak = 0
-history = []
-money_message = None
+obshak_file = "obshak.json"
+history_file = "FinanceLogs.txt"
 
-# Функции для работы с файлами
-def load_obshak_state():
+# Загрузка состояния общака из файла
+def load_obshak():
     global obshak
-    if os.path.exists(OBSHAK_FILE):
-        with open(OBSHAK_FILE, "r", encoding="utf-8") as f:
-            obshak = int(f.read().strip())
+    if os.path.exists(obshak_file):
+        with open(obshak_file, 'r') as file:
+            obshak = json.load(file).get('obshak', 0)
+    else:
+        obshak = 0
 
-def save_obshak_state():
-    global obshak
-    with open(OBSHAK_FILE, "w", encoding="utf-8") as f:
-        f.write(str(obshak))
+# Сохранение состояния общака в файл
+def save_obshak():
+    with open(obshak_file, 'w') as file:
+        json.dump({'obshak': obshak}, file)
 
+# Загрузка истории транзакций из файла
 def load_history():
     global history
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
-            history = f.read().strip().split("\n")
+    if os.path.exists(history_file):
+        with open(history_file, 'r') as file:
+            history = file.read().splitlines()
+    else:
+        history = []
 
-def log_transaction(entry):
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(entry + "\n")
+# Сохранение истории транзакций в файл
+def save_history():
+    with open(history_file, 'w') as file:
+        file.write("\n".join(history))
 
-# Загрузка состояния общака и истории при запуске бота
-load_obshak_state()
+# Инициализация состояния общака и истории транзакций
+load_obshak()
 load_history()
+
+money_message = None
 
 # Команда /money
 @bot.command(name='money')
@@ -80,14 +93,14 @@ async def money(ctx):
 # Команда /history
 @bot.command(name='history')
 async def history_cmd(ctx):
-    last_100_transactions = "\n".join(history[-100:]) if history else "История пуста."
-    await ctx.author.send(f"История последних 100 транзакций:\n{last_100_transactions}")
+    history_message = "\n".join(history[-100:]) if history else "История пуста."
+    await ctx.author.send(f"История транзакций:\n{history_message}")
     await ctx.message.delete()
 
 # Команда /historyMe
 @bot.command(name='historyMe')
-async def history_me_cmd(ctx):
-    await ctx.author.send(file=discord.File(LOG_FILE))
+async def history_me(ctx):
+    await ctx.author.send(file=discord.File(history_file))
     await ctx.message.delete()
 
 # Обработка нажатий на кнопки
@@ -109,11 +122,10 @@ async def on_interaction(interaction: discord.Interaction):
                 username = self.username.value
                 amount = int(self.amount.value)
                 obshak += amount
+                save_obshak()
                 timestamp = (datetime.utcnow() + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
-                entry = f"[{timestamp}] {username} пополнил общак на {amount} рублей."
-                history.append(entry)
-                log_transaction(entry)
-                save_obshak_state()
+                history.append(f"[{timestamp}] {username} пополнил общак на {amount} рублей.")
+                save_history()
                 await interaction.response.send_message(f"{username} пополнил общак на {amount} рублей. Текущий баланс: {obshak} рублей.", ephemeral=True)
                 await update_money_message(interaction.channel)
 
@@ -140,10 +152,9 @@ async def on_interaction(interaction: discord.Interaction):
                     await interaction.response.send_message(f"Недостаточно средств в общаке для снятия {amount} рублей.", ephemeral=True)
                 else:
                     obshak -= amount
-                    entry = f"[{timestamp}] {username} снял {amount} рублей из общака. Причина: {reason}."
-                    history.append(entry)
-                    log_transaction(entry)
-                    save_obshak_state()
+                    save_obshak()
+                    history.append(f"[{timestamp}] {username} снял {amount} рублей из общака. Причина: {reason}.")
+                    save_history()
                     await interaction.response.send_message(f"{username} снял {amount} рублей из общака. Причина: {reason}. Текущий баланс: {obshak} рублей.", ephemeral=True)
                     await update_money_message(interaction.channel)
 
@@ -161,4 +172,5 @@ async def update_money_message(channel):
 
         await money_message.edit(embed=embed, view=view)
 
-bot.run('DISCORD_BOT_TOKEN')
+# keep_alive()  # Раскомментируйте, если используете Flask сервер для keep-alive
+bot.run(TOKEN)
