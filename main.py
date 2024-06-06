@@ -4,13 +4,12 @@ from discord.ext import commands, tasks
 from discord.ui import Button, View, Modal, TextInput
 from datetime import datetime, timedelta
 import json
-
-# Создайте .env файл с вашим токеном
 from dotenv import load_dotenv
 
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+CLEAR_KEY = os.getenv('CLEARKY')
 
 # Flask сервер для keep-alive (необходим для бесплатных хостингов, например, Repl.it)
 from flask import Flask
@@ -38,6 +37,8 @@ bot = commands.Bot(command_prefix='/', intents=intents)
 # Состояние общака и история транзакций
 obshak_file = "obshak.json"
 history_file = "FinanceLogs.txt"
+state_file = "ObshakState.txt"
+history_guns = "GunsLogs.txt"
 
 # Загрузка состояния общака из файла
 def load_obshak():
@@ -103,7 +104,24 @@ async def history_me(ctx):
     await ctx.author.send(file=discord.File(history_file))
     await ctx.message.delete()
 
-# Обработка нажатий на кнопки
+# Команда /clear
+@bot.command(name='clear')
+async def clear(ctx, key: str):
+    if key == CLEAR_KEY:
+        with open(history_file, 'w') as file:
+            file.write("")
+        with open(obshak_file, 'w') as file:
+            file.write(json.dumps({'obshak': 0}))
+        with open(state_file, 'w') as file:
+            file.write("")
+        load_obshak()
+        load_history()
+        await ctx.send("Файлы успешно очищены.", delete_after=10)
+    else:
+        await ctx.send("Неверный ключ.", delete_after=10)
+    await ctx.message.delete()
+
+# Обработка взаимодействий с кнопками
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
     global obshak, history, money_message
@@ -171,6 +189,12 @@ async def update_money_message(channel):
         view.add_item(Button(label="Снять", style=discord.ButtonStyle.red, custom_id="withdraw"))
 
         await money_message.edit(embed=embed, view=view)
+
+# Импортируем команду /guns из guns.py
+from guns import setup as setup_guns
+
+# Регистрация команды /guns
+setup_guns(bot)
 
 # keep_alive()  # Раскомментируйте, если используете Flask сервер для keep-alive
 bot.run(TOKEN)
