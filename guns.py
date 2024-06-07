@@ -84,7 +84,6 @@ async def update_guns_message(channel):
 
 guns_message = None
 
-# Команда /guns
 def setup(bot):
     @bot.command(name='guns')
     async def guns_cmd(ctx):
@@ -104,11 +103,11 @@ def setup(bot):
         guns_message = await ctx.send(embed=embed, view=view)
         await ctx.message.delete()
 
-    @bot.event
-    async def on_interaction(interaction: discord.Interaction):
-        if interaction.data["custom_id"].startswith("take_"):
-            gun = interaction.data["custom_id"].replace("take_", "")
-            await interaction.response.send_modal(GunActionModal(gun, "Взять"))
-        elif interaction.data["custom_id"].startswith("put_"):
-            gun = interaction.data["custom_id"].replace("put_", "")
-            await interaction.response.send_modal(GunActionModal(gun, "Положить"))
+async def handle_gun_interaction(interaction: discord.Interaction):
+    if interaction.data["custom_id"].startswith("take_"):
+        gun = interaction.data["custom_id"].replace("take_", "")
+        await interaction.response.send_modal(GunActionModal(gun, "Взять"))
+    elif interaction.data["custom_id"].startswith("put_"):
+        gun = interaction.data["custom_id"].replace("put_", "")
+        await interaction.response.send_modal(GunActionModal(gun, "Положить"))
+
