@@ -38,6 +38,18 @@ async def history_guns_cmd(ctx):
     await ctx.author.send(file=discord.File(guns_log_file))
     await ctx.message.delete()
 
+# Команда /rules
+@bot.command(name='rules')
+async def rules_cmd(ctx):
+    rules_file = "rules.txt"
+    if os.path.exists(rules_file):
+        with open(rules_file, 'r', encoding='utf-8') as file:
+            rules_content = file.read()
+        await ctx.send(rules_content)
+    else:
+        await ctx.send("Файл с правилами не найден.")
+    await ctx.message.delete()
+
 # Обработка взаимодействий с кнопками
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
