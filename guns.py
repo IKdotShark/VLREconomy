@@ -16,14 +16,22 @@ guns_list = [
     "CheyTac",
     "Mar 10",
     "СВЧ",
-    "Mk 18 Mjolnir"
+    "Mk 18 Mjolnir",
+    "DXL-4M Севастополь",
+    "Sig338"
 ]
 
 # Загрузка состояния оружия из файла
 def load_guns():
     if os.path.exists(guns_file):
         with open(guns_file, 'r') as file:
-            return json.load(file)
+            data = json.load(file)
+            # Обновить данные, добавив новые виды оружия, если они отсутствуют
+            for gun in guns_list:
+                if gun not in data:
+                    data[gun] = 0
+            save_guns(data)
+            return data
     else:
         return {gun: 0 for gun in guns_list}
 
@@ -110,4 +118,5 @@ async def handle_gun_interaction(interaction: discord.Interaction):
     elif interaction.data["custom_id"].startswith("put_"):
         gun = interaction.data["custom_id"].replace("put_", "")
         await interaction.response.send_modal(GunActionModal(gun, "Положить"))
+
 
