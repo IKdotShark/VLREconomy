@@ -1,29 +1,11 @@
 import os
 import discord
-from discord.ext import commands, tasks
-from discord.ui import Button, View, Modal, TextInput
-from datetime import datetime, timedelta
+from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
-
-from flask import Flask
-from threading import Thread
-
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "I'm alive"
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
 
 # Инициализация бота
 intents = discord.Intents.default()
@@ -50,6 +32,18 @@ async def rules_cmd(ctx):
         await ctx.send("Файл с правилами не найден.")
     await ctx.message.delete()
 
+# Команда /commands (вместо /help)
+@bot.command(name='commands')
+async def commands_cmd(ctx):
+    embed = discord.Embed(title="Доступные команды", description="Список доступных команд", color=0x00ff00)
+    embed.add_field(name="/money", value="Показать состояние общака", inline=False)
+    embed.add_field(name="/guns", value="Показать наличие оружия", inline=False)
+    embed.add_field(name="/history_guns", value="Отправить файл с историей оружия", inline=False)
+    embed.add_field(name="/historyMe", value="Отправить файл с историей финансов", inline=False)
+    embed.add_field(name="/rules", value="Показать правила", inline=False)
+    await ctx.send(embed=embed)
+    await ctx.message.delete()
+
 # Обработка взаимодействий с кнопками
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
@@ -68,5 +62,5 @@ from guns import setup as setup_guns, handle_gun_interaction
 setup_finance(bot)
 setup_guns(bot)
 
-# keep_alive()  # Раскомментируйте, если используете Flask сервер для keep-alive
+# Запуск бота
 bot.run(TOKEN)
