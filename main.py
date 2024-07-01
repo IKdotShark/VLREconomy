@@ -2,6 +2,9 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import asyncio
+from OnlineParser import get_players_online
+
 
 load_dotenv()
 
@@ -51,6 +54,14 @@ async def on_interaction(interaction: discord.Interaction):
         await handle_gun_interaction(interaction)
     elif interaction.data["custom_id"] in ["replenish", "withdraw"]:
         await handle_finance_interaction(interaction)
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+    while True:
+        players_online = get_players_online()
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(players_online))
+        await asyncio.sleep(15)
 
 # Импортируем команды и обработчики взаимодействий из Finance.py
 from Finance import setup as setup_finance, handle_finance_interaction
