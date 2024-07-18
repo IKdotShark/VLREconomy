@@ -2,9 +2,8 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-import asyncio
+from asyncio import sleep
 from OnlineParser import get_players_online
-
 
 load_dotenv()
 
@@ -21,6 +20,13 @@ bot = commands.Bot(command_prefix='/', intents=intents)
 async def history_guns_cmd(ctx):
     guns_log_file = "GunsLogs.txt"
     await ctx.author.send(file=discord.File(guns_log_file))
+    await ctx.message.delete()
+
+# Команда /historyMe
+@bot.command(name='historyMe')
+async def history_me_cmd(ctx):
+    finance_log_file = "FinanceLogs.txt"
+    await ctx.author.send(file=discord.File(finance_log_file))
     await ctx.message.delete()
 
 # Команда /rules
@@ -57,11 +63,10 @@ async def on_interaction(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user}')
     while True:
         players_online = get_players_online()
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(players_online))
-        await asyncio.sleep(15)
+        await sleep(15)
 
 # Импортируем команды и обработчики взаимодействий из Finance.py
 from Finance import setup as setup_finance, handle_finance_interaction
@@ -75,3 +80,4 @@ setup_guns(bot)
 
 # Запуск бота
 bot.run(TOKEN)
+
