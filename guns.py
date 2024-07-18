@@ -81,9 +81,10 @@ async def update_guns_message(channel):
         embed.add_field(name=gun, value=f"{guns[gun]} шт.", inline=False)
 
     view = View()
-    for gun in guns_list:
-        view.add_item(Button(label=f"Положить {gun}", style=discord.ButtonStyle.green, custom_id=f"put_{gun}"))
-        view.add_item(Button(label=f"Взять {gun}", style=discord.ButtonStyle.red, custom_id=f"take_{gun}"))
+    for i in range(0, len(guns_list), 3):  # По 3 кнопки на строку
+        for gun in guns_list[i:i+3]:
+            view.add_item(Button(label=f"Положить {gun}", style=discord.ButtonStyle.green, custom_id=f"put_{gun}"))
+            view.add_item(Button(label=f"Взять {gun}", style=discord.ButtonStyle.red, custom_id=f"take_{gun}"))
 
     if guns_message:
         await guns_message.edit(embed=embed, view=view)
@@ -104,9 +105,10 @@ def setup(bot):
             embed.add_field(name=gun, value=f"{guns[gun]} шт.", inline=False)
 
         view = View()
-        for gun in guns_list:
-            view.add_item(Button(label=f"Положить {gun}", style=discord.ButtonStyle.green, custom_id=f"put_{gun}"))
-            view.add_item(Button(label=f"Взять {gun}", style=discord.ButtonStyle.red, custom_id=f"take_{gun}"))
+        for i in range(0, len(guns_list), 3):  # По 3 кнопки на строку
+            for gun in guns_list[i:i+3]:
+                view.add_item(Button(label=f"Положить {gun}", style=discord.ButtonStyle.green, custom_id=f"put_{gun}"))
+                view.add_item(Button(label=f"Взять {gun}", style=discord.ButtonStyle.red, custom_id=f"take_{gun}"))
 
         guns_message = await ctx.send(embed=embed, view=view)
         await ctx.message.delete()
@@ -118,5 +120,3 @@ async def handle_gun_interaction(interaction: discord.Interaction):
     elif interaction.data["custom_id"].startswith("put_"):
         gun = interaction.data["custom_id"].replace("put_", "")
         await interaction.response.send_modal(GunActionModal(gun, "Положить"))
-
-
