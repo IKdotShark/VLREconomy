@@ -4,6 +4,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from asyncio import sleep
 from OnlineParser import get_players_online
+import asyncio
+import subprocess
 
 load_dotenv()
 
@@ -14,6 +16,18 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
+
+
+@bot.command(name='restart')
+#@has_permissions(administrator=True)
+async def restart_cmd(ctx):
+    message = await ctx.send("Бот перезапускается. Пожалуйста, не используйте его в течение следующих 2 минут.")
+    await asyncio.sleep(60)
+
+    subprocess.call(['systemctl', 'restart', 'discordbot'])
+
+    await asyncio.sleep(120)
+    await message.delete()
 
 # Команда /history_guns
 @bot.command(name='history_guns')
@@ -79,5 +93,5 @@ setup_finance(bot)
 setup_guns(bot)
 
 # Запуск бота
-bot.run(TOKEN)
+bot.run((TOKEN))
 
